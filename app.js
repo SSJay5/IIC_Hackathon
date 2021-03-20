@@ -13,11 +13,13 @@ const cors = require('cors');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 
+// Routers
+const userRouter = require('./routes/userRoutes');
+
 // Start express app
 const app = express();
 
 app.enable('trust proxy');
-
 
 // 1) GLOBAL MIDDLEWARES
 // Implement CORS
@@ -46,7 +48,7 @@ if (process.env.NODE_ENV === 'development') {
 const limiter = rateLimit({
   max: 100,
   windowMs: 60 * 60 * 1000,
-  message: 'Too many requests from this IP, please try again in an hour!'
+  message: 'Too many requests from this IP, please try again in an hour!',
 });
 app.use('/api', limiter);
 
@@ -74,6 +76,9 @@ app.use((req, res, next) => {
 });
 
 // 3) ROUTES
+
+app.use('/api/v1/users', userRouter);
+
 app.all('*', (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
