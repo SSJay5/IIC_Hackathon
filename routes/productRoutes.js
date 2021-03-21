@@ -4,6 +4,7 @@ const authController = require('../controllers/authController');
 
 const router = express.Router();
 
+router.route('/invoice/:id').get(productController.getInvoice);
 router.use(authController.protect);
 
 router

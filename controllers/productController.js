@@ -5,6 +5,7 @@ const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const SubProduct = require('../models/subProductModel');
 const Email = require('../utils/email');
+const fast2sms = require('fast-two-sms');
 
 exports.updateProduct = catchAsync(async (req, res, next) => {
   const updatedProduct = await Product.findByIdAndUpdate(
@@ -92,15 +93,17 @@ exports.sellProduct = catchAsync(async (req, res, next) => {
             productId: req.body.productId,
             quantity: req.body.quantity,
           });
-          // if (currentUser.productsYetToBeSold[i].quantity < 10) {
-          //   const product = await Product.findOne({
-          //     _id: currentUser.productsYetToBeSold[i].productId,
-          //   });
-          //   await new Email(currentUser, 'www.google.com').send(
-          //     'stock',
-          //     product.name
-          //   );
-          // }
+          if (currentUser.productsYetToBeSold[i].quantity < 10) {
+            const product = await Product.findOne({
+              _id: currentUser.productsYetToBeSold[i].productId,
+            });
+            const numbers = [currentUser.phoneNumber];
+            const sendSms = await fast2sms.sendMessage({
+              authorization: process.env.FAST2SMS_API_KEY,
+              message: `${currentUser.name} Your Product ${product.name} is about to go out of stock`,
+              numbers,
+            });
+          }
           const buyerAgent = await User.findOne({ _id: req.body.buyer });
           buyerAgent.productsYetToBeSold.push({
             productId: req.body.productId,
@@ -118,7 +121,7 @@ exports.sellProduct = catchAsync(async (req, res, next) => {
       }
     }
     if (productFound === false) {
-      throw new AppError('Product not found', 400);
+      return next(new AppError('Product not found', 400));
     }
     res.status(200).json({
       status: 'success',
@@ -158,18 +161,23 @@ exports.sellProduct = catchAsync(async (req, res, next) => {
             status: 'success',
             productSold: subProduct,
           });
+          const newSubProduct = await SubProduct.findOne({
+            _id: subProduct._id,
+          }).populate('productData');
+          res.redirect(
+            `https://iic-hackathon.herokuapp.com/api/v1/products/invoice/${subProduct._id}`
+          );
         }
       }
     }
     if (productFound === false) {
-      throw new AppError('Product not found', 400);
+      return next(new AppError('Product not found', 400));
     }
-  }
-
-  res.status(401).json({
-    status: 'fail',
-    message: 'You can only pruchase products',
-  });
+  } else
+    res.status(401).json({
+      status: 'fail',
+      message: 'You can only pruchase products',
+    });
 });
 
 exports.statusOfProduct = catchAsync(async (req, res, next) => {
@@ -185,7 +193,6 @@ exports.statusOfProduct = catchAsync(async (req, res, next) => {
     const product = await Product.findOne({
       _id: req.body.barcode,
     }).populate('ownerData');
-    console.log(product);
     if (product === null) {
       throw new AppError('Product not found', 400);
     }
@@ -209,4 +216,15 @@ exports.statusOfProduct = catchAsync(async (req, res, next) => {
       status: `Product is with Admin ${product.ownerData.name}`,
     });
   }
+});
+
+exports.getInvoice = catchAsync(async (req, res, next) => {
+  const newSubProduct = await SubProduct.findOne({
+    _id: req.params.id,
+  })
+    .populate('productData')
+    .populate('buyerData')
+    .populate('sellerData');
+  console.log(newSubProduct);
+  res.status(200).render('invoice', newSubProduct);
 });
