@@ -58,6 +58,11 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 
+app.set('view engine', 'pug');
+app.set('views', path.join(__dirname, 'views'));
+
+app.use(express.static(`${__dirname}/public`));
+
 // Data sanitization against NoSQL query injection
 app.use(mongoSanitize());
 

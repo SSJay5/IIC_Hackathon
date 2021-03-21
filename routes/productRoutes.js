@@ -14,9 +14,7 @@ router
   .patch(authController.restrictTo('admin'), productController.updateProduct)
   .delete(authController.restrictTo('admin'), productController.deleteProduct);
 
-router
-  .route('/status')
-  .post(authController.restrictTo('admin'), productController.statusOfProduct);
+router.route('/status').post(productController.statusOfProduct);
 
 router.route('/sell').post(productController.sellProduct);
 

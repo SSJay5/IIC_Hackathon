@@ -17,7 +17,10 @@ exports.addProducts = catchAsync(async (req, res, next) => {
   for (let i = 0; i < req.body.products; i += 1) {
     currentCategory.products.push(req.body.products[i]);
   }
-  await currentCategory.save();
+  await currentCategory.save({
+    validateBeforeSave: false,
+    runValidators: false,
+  });
   res.status(200).json({
     status: 'success',
     category: currentCategory,

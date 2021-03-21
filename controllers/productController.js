@@ -4,6 +4,7 @@ const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const SubProduct = require('../models/subProductModel');
+const Email = require('../utils/email');
 
 exports.updateProduct = catchAsync(async (req, res, next) => {
   const updatedProduct = await Product.findByIdAndUpdate(
@@ -14,7 +15,20 @@ exports.updateProduct = catchAsync(async (req, res, next) => {
   if (!updatedProduct) {
     return next(new AppError('No document found with that ID', 404));
   }
-
+  const currentUser = await User.findOne({ _id: req.user._id });
+  for (let i = 0; i < currentUser.productsYetToBeSold.length; i += 1) {
+    if (
+      JSON.stringify(updatedProduct._id) ===
+      JSON.stringify(currentUser.productsYetToBeSold[i].productId)
+    ) {
+      currentUser.productsYetToBeSold[i].quantity = updatedProduct.quantity;
+    }
+  }
+  console.log(currentUser);
+  await currentUser.save({
+    validateBeforeSave: false,
+    runValidators: false,
+  });
   res.status(200).json({
     status: 'success',
     updatedProduct: updatedProduct,
@@ -77,15 +91,30 @@ exports.sellProduct = catchAsync(async (req, res, next) => {
               productId: req.body.productId,
               quantity: 0,
             });
-            const buyerAgent = await User.findOne({ _id: req.body.buyer });
-            buyerAgent.productsYetToBeSold.push({
-              productId: req.body.productId,
-              quantity: req.body.quantity,
-            });
-            await buyerAgent.save();
           }
-          await currentUser.save();
+          // if (currentUser.productsYetToBeSold[i].quantity < 10) {
+          //   const product = await Product.findOne({
+          //     _id: currentUser.productsYetToBeSold[i].productId,
+          //   });
+          //   await new Email(currentUser, 'www.google.com').send(
+          //     'stock',
+          //     product.name
+          //   );
+          // }
+          const buyerAgent = await User.findOne({ _id: req.body.buyer });
+          buyerAgent.productsYetToBeSold.push({
+            productId: req.body.productId,
+            quantity: req.body.quantity,
+          });
+          await buyerAgent.save({
+            validateBeforeSave: false,
+            runValidators: false,
+          });
         }
+        await currentUser.save({
+          validateBeforeSave: false,
+          runValidators: false,
+        });
       }
     }
     if (productFound === false) {
@@ -121,7 +150,10 @@ exports.sellProduct = catchAsync(async (req, res, next) => {
             productId: subProduct._id,
             quantity: 0,
           });
-          await currentUser.save();
+          await currentUser.save({
+            validateBeforeSave: false,
+            runValidators: false,
+          });
           res.status(200).json({
             status: 'success',
             productSold: subProduct,
@@ -141,19 +173,20 @@ exports.sellProduct = catchAsync(async (req, res, next) => {
 });
 
 exports.statusOfProduct = catchAsync(async (req, res, next) => {
-  const subProduct = await (
-    await SubProduct.findOne({ _id: req.body.barcode })
-  ).populate('productData');
-  if (subProduct) {
+  const subProduct = await await SubProduct.findOne({
+    _id: req.body.barcode,
+  }).populate('productData');
+  if (subProduct !== null) {
     res.status(200).json({
       status: 'sold',
       subProduct,
     });
   } else {
-    const product = await (
-      await Product.findOne({ _id: req.body.barcode })
-    ).populate('ownerData');
-    if (!product) {
+    const product = await Product.findOne({
+      _id: req.body.barcode,
+    }).populate('ownerData');
+    console.log(product);
+    if (product === null) {
       throw new AppError('Product not found', 400);
     }
 
@@ -172,8 +205,8 @@ exports.statusOfProduct = catchAsync(async (req, res, next) => {
         }
       }
     }
+    res.status(200).json({
+      status: `Product is with Admin ${product.ownerData.name}`,
+    });
   }
-  res.status(404).json({
-    status: 'Product not found',
-  });
 });
