@@ -15,6 +15,7 @@ const globalErrorHandler = require('./controllers/errorController');
 
 // Routers
 const userRouter = require('./routes/userRoutes');
+const productRouter = require('./routes/productRoutes');
 
 // Start express app
 const app = express();
@@ -24,6 +25,7 @@ app.enable('trust proxy');
 // 1) GLOBAL MIDDLEWARES
 // Implement CORS
 app.use(cors());
+
 // Access-Control-Allow-Origin *
 // api.natours.com, front-end natours.com
 // app.use(cors({
@@ -32,9 +34,6 @@ app.use(cors());
 
 app.options('*', cors());
 // app.options('/api/v1/tours/:id', cors());
-
-// Serving static files
-app.use(express.static(path.join(__dirname, 'public')));
 
 // Set security HTTP headers
 app.use(helmet());
@@ -78,6 +77,7 @@ app.use((req, res, next) => {
 // 3) ROUTES
 
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/products', productRouter);
 
 app.all('*', (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));

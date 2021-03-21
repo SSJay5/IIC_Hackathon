@@ -1,4 +1,5 @@
 const User = require('../models/userModel');
+const Product = require('../models/productModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 
@@ -51,3 +52,4 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
     data: null,
   });
 });
+
