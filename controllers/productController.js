@@ -87,11 +87,11 @@ exports.sellProduct = catchAsync(async (req, res, next) => {
           currentUser.productsYetToBeSold[i].quantity -= req.body.quantity;
           if (currentUser.productsYetToBeSold[i].quantity === 0) {
             currentUser.productsYetToBeSold[i].splice(i, 1);
-            currentUser.productsSold.push({
-              productId: req.body.productId,
-              quantity: 0,
-            });
           }
+          currentUser.productsSold.push({
+            productId: req.body.productId,
+            quantity: req.body.quantity,
+          });
           // if (currentUser.productsYetToBeSold[i].quantity < 10) {
           //   const product = await Product.findOne({
           //     _id: currentUser.productsYetToBeSold[i].productId,

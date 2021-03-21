@@ -10,6 +10,8 @@ router.get('/logout', authController.logout);
 router.post('/forgotPassword', authController.forgotPassword);
 router.patch('/resetPassword/:token', authController.resetPassword);
 
+router.use(authController.protect);
+router.route('/me').get(userController.getMe);
 router.route('/').patch(userController.updateMe);
 
 module.exports = router;

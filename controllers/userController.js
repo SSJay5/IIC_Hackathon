@@ -11,10 +11,16 @@ const filterObj = (obj, ...allowedFields) => {
   return newObj;
 };
 
-exports.getMe = (req, res, next) => {
-  req.params.id = req.user.id;
-  next();
-};
+exports.getMe = catchAsync(async (req, res, next) => {
+  const me = await User.findOne({ _id: req.user._id })
+    .populate('productsYetToBeSold.productId')
+    .populate('productsSold.productId')
+    .populate('sub.user');
+
+  res.status(200).json({
+    me,
+  });
+});
 
 exports.updateMe = catchAsync(async (req, res, next) => {
   // 1) Create error if user POSTs password data
@@ -52,4 +58,3 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
     data: null,
   });
 });
-
